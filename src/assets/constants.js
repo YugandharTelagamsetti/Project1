@@ -1,0 +1,9 @@
+export const AUTH_ACCOUNT_LOCKED = -2;
+export const AUTH_UNAUTHORISED = -1;
+export const AUTH_FAILURE = 0;
+export const AUTH_SUCCESS = 1;
+export const AUTH_SESSION_OPEN = 2;
+export const AUTH_USER_TRANSFERRED = 3;
+export const AUTH_USER_DELETED = 4;
+export const AUTH_USER_ACCESS_DENIED = 5;
+export const AUTH_USER_NO_ROLES = 10;
