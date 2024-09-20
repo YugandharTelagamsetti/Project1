@@ -1,339 +1,142 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Text, View, FlatList, StyleSheet, TouchableOpacity , ActivityIndicator, RefreshControl,TextInput} from 'react-native';
+import { Text, View, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { getTotalDateFormatted } from './Utils';
-
-
 import { useDispatch, useSelector } from 'react-redux';
 import { clearProjectDetailsData, projectDetailsList } from './store/slices/ProjectDetailsSlice';
 import FailureScreen from './FailureScreen';
 import checkNetworkConnectivity from './utils/NetworkUtils';
 
 const CaseList = ({ item, route }) => {
-
   const [offset, setOffset] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [searchValue, setSearchValue] = useState('');
   const [currentStatus, setcurrentStatus] = useState(null);
-
-
   const [totalItems, setTotalItems] = useState(0);
   const [lastVisibleIndex, setLastVisibleIndex] = useState(null);
-
-
-  const navigation = useNavigation();
- 
-  let [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [endOfPage, setEndOfPage] = useState(false);
-  
-  const [isSearchBarVisible, setSearchBarVisible] = useState(false);
-  const { showSearchBar } = route.params || {};
-
-  const dispatch = useDispatch();
-  const dispatch = useDispatch();
-
-  // const {projectDetailsData,isLoading,isSuccess} =useSelector((state)=>{(projectDetailsData:state.projectDetails.pr)});
-  // GOOD: instead, select only the state you need, calling useSelector as many times as needed
-  const projectDetailsData = useSelector((state) => state.projectDetails.projectDetailsData);
-  const isLoading = useSelector((state) => state.projectDetails.isLoading);
-  const isSuccess = useSelector((state) => state.projectDetails.isSuccess);
-  const isError = useSelector((state) => state.projectDetails.isError);
-  const statusCode = useSelector((state) => state.projectDetails.statusCode);
-
-
-
-
-
-  const projectDetailsData = useSelector((state) => state.projectDetails.projectDetailsData);
-  const isLoading = useSelector((state) => state.projectDetails.isLoading);
-  const isSuccess = useSelector((state) => state.projectDetails.isSuccess);
-  const isError = useSelector((state) => state.projectDetails.isError);
-  const statusCode = useSelector((state) => state.projectDetails.statusCode);
-
-
-
-
-
-
-
-
   const [refreshing, setRefreshing] = useState(false);
   const [refreshSuccessMessage, setRefreshSuccessMessage] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [endOfPage, setEndOfPage] = useState(false);
+  const [isSearchBarVisible, setSearchBarVisible] = useState(false);
+  const { showSearchBar } = route.params || {};
+  const dispatch = useDispatch();
+  const navigation = useNavigation();
+
+  const projectDetailsData = useSelector((state) => state.projectDetails.projectDetailsData);
+  const isLoading = useSelector((state) => state.projectDetails.isLoading);
+  const isError = useSelector((state) => state.projectDetails.isError);
+  const statusCode = useSelector((state) => state.projectDetails.statusCode);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await dispatch(clearProjectDetailsData());
+    setOffset(1);
+    setSearchValue(null);
+    setRefreshSuccessMessage(true);
 
-    try{
-      setOffset(1);
-      setSearchValue(null);
-      setRefreshSuccessMessage(true);
-  
-      setTimeout(() => {
-        setRefreshSuccessMessage(false);
-  
-      }, 2000);
-    }catch( error){
-      console.error('Error during refresh',error);
-    }finally{
-      setRefreshing(false);
-
-    }
-   
-
-  }, [pageSize, searchValue, currentStatus]);
-
+    setTimeout(() => setRefreshSuccessMessage(false), 2000);
+    setRefreshing(false);
+  }, []);
 
   const handleCardPress = () => {
     // Handle card press if needed
   };
 
-  const LoadingFooter = (styleContainer) => (
-    <View style={styleContainer}>
-
-  const LoadingFooter = (styleContainer) => (
-    <View style={styleContainer}>
-      <ActivityIndicator size="medium" color="blue" />
-    </View>
-  );
-
-
-
-
-  useEffect( () => {
-    const isConnected =  checkNetworkConnectivity();
-    if(isConnected){
-      fetchData(offset, pageSize, searchValue, currentStatus);
-    }else{
-      console.log('network noo');
-
-    }
-    return () => {
-      // Dispatch clearProjectDetailsData to reset the state when the component is unmounted
-    // dispatch(clearProjectDetailsData());
-    };
- 
-  }, [offset, pageSize, searchValue, currentStatus,dispatch]);
-  }, [offset, pageSize, searchValue, currentStatus,dispatch]);
-  useEffect(() => {
-    return () => {
-      // Dispatch clearProjectDetailsData to reset the state when the component is unmounted
-     dispatch(clearProjectDetailsData());
-    };
- 
-  }, []);
- 
   const fetchData = async (offset, pageSize, searchValue, currentStatus) => {
     try {
       setLoading(true);
-
       const requestBody = {
-        offset: offset,
-        pageSize: pageSize,
-        searchValue: searchValue,
-        currentStatus: currentStatus,
-      
+        offset,
+        pageSize,
+        searchValue,
+        currentStatus,
       };
-     if (searchValue) {
-      await dispatch(clearProjectDetailsData());
+
       await dispatch(projectDetailsList(requestBody));
-    } else {
-      // Fetch all data
-      await dispatch(projectDetailsList(requestBody));
-    }
- 
-      // if (pr.length === 0) {
-      //   // If response is empty, show "No data found" message
-      //   setData([]);
-      //   setTotalItems(0);
-      //   setEndOfPage(true);
-      // // } else {
-      //   const newDataLength = [...data, ...projectDetailsData].length;
-      //  setData([...projectDetailsData]);
-        
-      //}
- 
-     
-    
     } catch (error) {
-      console.log(error)
-      console.log(error)
+      console.error(error);
     } finally {
-
-
       setLoading(false);
     }
   };
- 
-  const handleEndReached = () => {
-    setEndOfPage(projectDetailsData.length<pageSize);
 
-    if (projectDetailsData.length>3&& !loading && !endOfPage) {
+  const handleEndReached = () => {
+    if (!loading && !endOfPage) {
       setOffset((prevOffset) => prevOffset + 1);
     }
-
-
   };
 
-
-
-
   const handleViewableItemsChanged = ({ viewableItems }) => {
-    setTotalItems(projectDetailsData.length);
-
     if (viewableItems.length > 0) {
-      const lastItem = viewableItems[viewableItems.length - 1];
-      setLastVisibleIndex(lastItem.index);
+      setLastVisibleIndex(viewableItems[viewableItems.length - 1].index);
     }
   };
 
-
-  const handleSearchInputChange = (searchValue) => {
-    setSearchValue(searchValue);
+  const handleSearchInputChange = (value) => {
+    setSearchValue(value);
     setOffset(1);
-    // setData([]);
-  };
-  const onTryAgain = () => {
-    setOffset(1);
-    setSearchValue(null);
-    
-    console.log('api called');
-    console.log(isError,projectDetailsData.length );
-    // Handle card press if needed
-
   };
 
   const onTryAgain = () => {
     setOffset(1);
     setSearchValue(null);
-    
-    console.log('api called');
-    console.log(isError,projectDetailsData.length );
-    // Handle card press if needed
-
   };
 
   return (
-    
-    
     <View style={{ flex: 1, position: 'relative' }}>
       {showSearchBar && (
         <View style={styles.container}>
           <TextInput
             style={styles.searchBar}
-            placeholder='Search'
-            placeholderTextColor='black'
+            placeholder="Search"
+            placeholderTextColor="black"
             onChangeText={handleSearchInputChange}
             value={searchValue}
           />
         </View>
       )}
-      { isError ? (
-        <FailureScreen errorMessage={statusCode} onTryAgain={onTryAgain}>
-        </FailureScreen>
-    
-      ) : projectDetailsData.length > 0 ? (
-      { isError ? (
-        <FailureScreen errorMessage={statusCode} onTryAgain={onTryAgain}>
-        </FailureScreen>
-    
+      {isError ? (
+        <FailureScreen errorMessage={statusCode} onTryAgain={onTryAgain} />
       ) : projectDetailsData.length > 0 ? (
         <FlatList
           data={projectDetailsData}
           keyExtractor={(item) => item.id.toString()}
           onEndReached={handleEndReached}
           onEndReachedThreshold={0.2}
-          ListFooterComponent={() => (loading ? <LoadingFooter /> : null)}
-          ListHeaderComponent={() => <View style={{ height: 1 }} />}
+          ListFooterComponent={loading ? <LoadingFooter styleContainer={styles.loadingContainer} /> : null}
           onViewableItemsChanged={handleViewableItemsChanged}
-
-          refreshControl={
-            <RefreshControl
-              onRefresh={onRefresh}
-              refreshing={refreshing} />
-          }
-
+          refreshControl={<RefreshControl onRefresh={onRefresh} refreshing={refreshing} />}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={handleCardPress}>
-              <View style={styles.card} key={item.id}>
-
-
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Win Code </Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}>{item.id}</Text>
-                </View>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Budget Name   </Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}>{item.workName}</Text>
-                </View>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Budget Start Date </Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}>{getTotalDateFormatted(item.startDate)}</Text>
-                </View>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Budget End Date   </Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}>{getTotalDateFormatted(item.endDate)}</Text>
-                </View>
-
-
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Budget cost</Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}></Text>
-                </View>
-
-
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Sender  </Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}>{item.endDate}</Text>
-                </View>
-
-
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Receiver </Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}>{item.receiver}</Text>
-                </View>
-                <View style={styles.titleContainer}>
-                  <Text style={styles.title}>Status </Text>
-                  <Text style={styles.colon}>: </Text>
-                  <Text style={styles.itemTitle}>{item.currentStatus}</Text>
-                </View>
+              <View style={styles.card}>
+                {/* Render item details here */}
               </View>
             </TouchableOpacity>
           )}
         />
-
       ) : (
         <Text style={{ textAlign: 'center', flex: 1 }}>
           {searchValue ? 'No data found' : <LoadingFooter styleContainer={styles.loadingContainer} />}
-        </Text>)}
-      
-        <Text style={{ textAlign: 'center', flex: 1 }}>
-          {searchValue ? 'No data found' : <LoadingFooter styleContainer={styles.loadingContainer} />}
-        </Text>)}
-      
-     {refreshSuccessMessage && (
+        </Text>
+      )}
+
+      {refreshSuccessMessage && (
         <View style={styles.refreshSuccessMessage}>
-          <Text style={styles.refreshSuccessText}>Refresh successfully</Text>
+          <Text style={styles.refreshSuccessText}>Refresh successful</Text>
         </View>
       )}
       <View style={styles.paginationContainer}>
         <Text style={styles.paginationText}>
-          {` ${lastVisibleIndex} of ${totalItems}`}
+          {`${lastVisibleIndex} of ${totalItems}`}
         </Text>
       </View>
-
-
     </View>
   );
 };
+
+
+
 
 
 const styles = StyleSheet.create({
@@ -392,11 +195,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
     position: 'absolute',
     top: 0,
     bottom: 0,
